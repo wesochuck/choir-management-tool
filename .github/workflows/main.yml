@@ -3,7 +3,7 @@ name: Deploy to PocketHost
 on:
   push:
     branches:
-      - main  # Adjust branch if needed
+      - main # Adjust branch if needed
 
 jobs:
   deploy:
@@ -52,27 +52,41 @@ jobs:
           # REPLACE with your actual PocketHost instance subdomain (e.g., /my-choir-app/)
           server-dir: /choir-manager/
 
+      - name: Force PocketHost Restart
+        run: |
+          echo "Force restart at $(date)" > restart.txt
+          curl -T restart.txt --ftp-ssl --user "${{ secrets.POCKETHOST_USERNAME }}:${{ secrets.POCKETHOST_PASSWORD }}" ftp://ftp.pockethost.io/choir-manager/pb_hooks/restart.txt
+
       - name: Verify deployed PocketBase hook fingerprint
         shell: bash
         run: |
           set -euo pipefail
           expected_fingerprint="$(node -e 'const fs = require("fs"); const source = fs.readFileSync("pocketbase/pb_hooks/main.pb.js", "utf8"); const match = source.match(/fingerprint: "([a-f0-9]{16})"/); if (!match) process.exit(1); process.stdout.write(match[1]);')"
 
-          for attempt in $(seq 1 18); do
+          for attempt in $(seq 1 36); do
             if EXPECTED_HOOK_FINGERPRINT="$expected_fingerprint" node --input-type=module -e '
-              const response = await fetch("https://choir-manager.pockethost.io/api/hooks/health", {
-                headers: { Accept: "application/json" },
-              });
-              const body = await response.json().catch(() => null);
-              if (!response.ok || body?.ok !== true || body?.fingerprint !== process.env.EXPECTED_HOOK_FINGERPRINT) {
+              async function check() {
+                try {
+                  const response = await fetch("https://choir-manager.pockethost.io/api/hooks/health", {
+                    headers: { Accept: "application/json" },
+                  });
+                  const body = await response.json().catch(() => null);
+                  if (response.ok && body?.ok === true && body?.fingerprint === process.env.EXPECTED_HOOK_FINGERPRINT) {
+                    process.exit(0);
+                  }
+                  console.log(`[Attempt] Status: ${response.status}, Fingerprint: ${body?.fingerprint || "None"}`);
+                } catch (err) {
+                  console.log(`[Attempt] Fetch failed: ${err.message}`);
+                }
                 process.exit(1);
               }
+              check();
             '; then
               echo "PocketHost loaded hook fingerprint $expected_fingerprint"
               exit 0
             fi
 
-            echo "Waiting for PocketHost to reload custom hooks ($attempt/18)..."
+            echo "Waiting for PocketHost to reload custom hooks ($attempt/36)..."
             sleep 5
           done
 
