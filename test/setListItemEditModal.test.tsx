@@ -44,7 +44,8 @@ describe('SetListItemEditModal featured performers', () => {
       { id: 'legacy', title: 'Legacy Solo', type: 'song', soloSmallGroup: true },
       (item) => saved.push(item)
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Update Item' }));
+    assert.ok(screen.getByRole('heading', { name: 'Set List Details' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save Set List Details' }));
     assert.equal(saved.length, 1);
     assert.equal(saved[0].isFeaturedNumber, true);
     assert.deepEqual(saved[0].performerCredits, []);
@@ -67,7 +68,7 @@ describe('SetListItemEditModal featured performers', () => {
     );
     await userEvent.click(screen.getByRole('checkbox', { name: 'Assign specific performers' }));
     assert.equal(confirm.mock.callCount(), 1);
-    await userEvent.click(screen.getByRole('button', { name: 'Update Item' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save Set List Details' }));
     assert.equal(saved[0].isFeaturedNumber, false);
     assert.deepEqual(saved[0].performerCredits, []);
   });

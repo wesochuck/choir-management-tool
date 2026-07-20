@@ -160,7 +160,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Edit Set List Item"
+      title="Set List Details"
       maxWidth="500px"
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -173,7 +173,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             Cancel
           </Button>
           <Button variant="primary" className="w-full sm:w-auto" onClick={() => handleSubmit()}>
-            Update Item
+            Save Set List Details
           </Button>
         </div>
       }
