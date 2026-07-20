@@ -26,7 +26,7 @@ export function FeaturedAssignmentCallout({
       role="status"
     >
       <div className="font-semibold">
-        <span aria-hidden="true">🎤</span> You’re featured
+        <span aria-hidden="true">🎤</span> You’re assigned to perform
         {inherited ? ` in ${sourceEvent.title || 'the parent performance'}` : ''}
       </div>
       <ul className="m-0 mt-1 list-disc pl-5">

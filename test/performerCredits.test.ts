@@ -19,7 +19,7 @@ describe('featured performer credits', () => {
     assert.equal(isFeaturedNumber(item()), false);
     assert.equal(isFeaturedNumber(item({ soloSmallGroup: true })), true);
     assert.equal(isFeaturedNumber(item({ type: 'intermission', isFeaturedNumber: true })), false);
-    assert.equal(getFeaturedNumberLabel(item({ isFeaturedNumber: true })), 'Featured Number');
+    assert.equal(getFeaturedNumberLabel(item({ isFeaturedNumber: true })), 'Performers TBA');
     assert.equal(
       getFeaturedNumberLabel(
         item({
@@ -46,7 +46,7 @@ describe('featured performer credits', () => {
   it('formats TBA, solo, and ordered group credits', () => {
     assert.equal(
       formatFeaturedNumberCredit(item({ isFeaturedNumber: true })),
-      'Featured Number — Performers TBA'
+      'Performers TBA'
     );
     assert.equal(
       formatFeaturedNumberCredit(

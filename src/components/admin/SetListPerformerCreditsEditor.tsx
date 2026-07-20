@@ -142,7 +142,7 @@ export function SetListPerformerCreditsEditor({
         </ol>
       ) : (
         <div className="border-warning-border bg-warning-bg/60 text-warning-text rounded-md border border-dashed p-3 text-center text-sm font-medium">
-          Featured Number — Performers TBA
+          Performers TBA
         </div>
       )}
 

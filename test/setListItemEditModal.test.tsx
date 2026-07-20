@@ -51,7 +51,7 @@ describe('SetListItemEditModal featured performers', () => {
     assert.equal(saved[0].soloSmallGroup, undefined);
   });
 
-  it('confirms and clears credits when Featured Number is turned off', async () => {
+  it('confirms and clears credits when specific performer assignments are turned off', async () => {
     const saved: SetListItem[] = [];
     const confirm = mock.fn(async () => true);
     renderModal(
@@ -65,7 +65,7 @@ describe('SetListItemEditModal featured performers', () => {
       (item) => saved.push(item),
       confirm
     );
-    await userEvent.click(screen.getByRole('checkbox', { name: /Featured Number/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Assign specific performers' }));
     assert.equal(confirm.mock.callCount(), 1);
     await userEvent.click(screen.getByRole('button', { name: 'Update Item' }));
     assert.equal(saved[0].isFeaturedNumber, false);

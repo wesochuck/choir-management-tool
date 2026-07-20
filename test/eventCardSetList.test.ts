@@ -227,7 +227,7 @@ test('EventCard shows a personal featured assignment for Pending and No RSVPs', 
       )
     );
     const textContent = container.textContent || '';
-    assert.ok(textContent.includes('You’re featured'));
+    assert.ok(textContent.includes('You’re assigned to perform'));
     assert.ok(textContent.includes('Solo — Featured Song'));
     assert.equal(container.querySelectorAll('ol').length, 0, 'Full set list remains RSVP-gated');
     unmount();
@@ -266,7 +266,7 @@ test('EventCard hides personal featured assignments until the effective list is 
       })
     )
   );
-  assert.ok(!(container.textContent || '').includes('You’re featured'));
+  assert.ok(!(container.textContent || '').includes('You’re assigned to perform'));
 });
 
 test('EventCard includes approved performer credits in the singer set list', () => {

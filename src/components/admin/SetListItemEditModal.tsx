@@ -70,7 +70,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     if (nextType === type) return;
     if (nextType === 'intermission' && performerCredits.length > 0) {
       const confirmed = await dialog.confirm({
-        title: 'Clear Performer Credits?',
+        title: 'Clear Performer Assignments?',
         message: 'Changing this song to an intermission will remove all performer credits.',
         confirmLabel: 'Change to Intermission',
         cancelLabel: 'Keep Song',
@@ -86,10 +86,11 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   const handleFeaturedChange = async (checked: boolean) => {
     if (!checked && performerCredits.length > 0) {
       const confirmed = await dialog.confirm({
-        title: 'Clear Performer Credits?',
-        message: 'Turning off Featured Number will remove all selected performer credits.',
+        title: 'Clear Performer Assignments?',
+        message:
+          'Turning off specific performer assignments will remove all selected performers.',
         confirmLabel: 'Turn Off and Clear',
-        cancelLabel: 'Keep Featured Number',
+        cancelLabel: 'Keep Assignments',
         variant: 'danger',
       });
       if (!confirmed) return;
@@ -225,11 +226,19 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
 
         {type === 'song' && (
           <Checkbox
+            aria-label="Assign specific performers"
             checked={featuredNumber}
             onChange={(event) => void handleFeaturedChange(event.target.checked)}
             className={`rounded-xl border p-3 px-4 shadow-sm transition-colors ${featuredNumber ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface'}`}
           >
-            <span className="text-sm font-medium">🎤 Featured Number</span>
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">
+                <span aria-hidden="true">🎤</span> Assign specific performers
+              </span>
+              <span className="text-text-muted text-xs">
+                Use for solos and small-group pieces. Leave off for the full ensemble.
+              </span>
+            </span>
           </Checkbox>
         )}
 

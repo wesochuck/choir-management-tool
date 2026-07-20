@@ -19,7 +19,7 @@ export function getPerformerCredits(item: SetListItem): SetListPerformerCredit[]
 export function getFeaturedNumberLabel(item: SetListItem): string | null {
   if (!isFeaturedNumber(item)) return null;
   const count = getPerformerCredits(item).length;
-  if (count === 0) return 'Featured Number';
+  if (count === 0) return 'Performers TBA';
   return count === 1 ? 'Solo' : 'Group';
 }
 
@@ -27,7 +27,7 @@ export function formatFeaturedNumberCredit(item: SetListItem): string | null {
   const label = getFeaturedNumberLabel(item);
   if (!label) return null;
   const credits = getPerformerCredits(item);
-  if (credits.length === 0) return `${label} — Performers TBA`;
+  if (credits.length === 0) return label;
   return `${label} — ${credits.map((credit) => credit.displayName).join(', ')}`;
 }
 

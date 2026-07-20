@@ -58,14 +58,14 @@ export function SetListCopyModal({
           from <strong className="text-text">{sourceEvent?.title || 'the selected event'}</strong>.
         </p>
         <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-          <legend className="text-label mb-2">Featured performer credits</legend>
+          <legend className="text-label mb-2">Specific performer assignments</legend>
           <button
             type="button"
             className={`rounded-md border p-3 text-left ${creditMode === 'include' ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface text-text'}`}
             onClick={() => setCreditMode('include')}
             aria-pressed={creditMode === 'include'}
           >
-            <span className="block text-sm font-semibold">Include performer credits</span>
+            <span className="block text-sm font-semibold">Include assigned performers</span>
             <span className="text-text-muted block text-xs">
               Copy roster and guest credits in their current billing order.
             </span>
@@ -76,9 +76,9 @@ export function SetListCopyModal({
             onClick={() => setCreditMode('reset')}
             aria-pressed={creditMode === 'reset'}
           >
-            <span className="block text-sm font-semibold">Reset credits to Performers TBA</span>
+            <span className="block text-sm font-semibold">Reset to Performers TBA</span>
             <span className="text-text-muted block text-xs">
-              Keep Featured Number markers but remove their selected credits.
+              Keep specific performer assignments enabled but remove the selected performers.
             </span>
           </button>
         </fieldset>

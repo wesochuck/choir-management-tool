@@ -48,7 +48,7 @@ describe('SetListCopyModal', () => {
         onCopy={onCopy}
       />
     );
-    await userEvent.click(screen.getByRole('button', { name: /Reset credits to Performers TBA/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Reset to Performers TBA/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Copy and Replace' }));
     assert.deepEqual(onCopy.mock.calls[0].arguments, ['source', 'reset']);
   });
