@@ -11797,7 +11797,7 @@ routerUse((e) => {
 });
 
 routerAdd("GET", "/api/hooks/health", (e) => {
-    return e.json(200, { ok: true, fingerprint: "2cf0c7e3b76c6769" });
+    return e.json(200, { ok: true, fingerprint: "3a122608711e7fc5" });
 });
 
 routerAdd("GET", "/api/setup/status", (e) => {
@@ -17175,9 +17175,10 @@ routerAdd("POST", "/api/checkout/create-dues-session", (e) => {
     // --- Utility source: checkout/createDuesSession.ts ---
     "use strict";
     function handleCreateDuesSession(e) {
-        const profileId = e.requestInfo().body.profileId;
-        const seasonId = e.requestInfo().body.seasonId;
-        const cancelPath = e.requestInfo().body.cancelPath || '/dashboard';
+        const body = e.requestInfo().body;
+        const profileId = String(body.profileId || '');
+        const seasonId = String(body.seasonId || '');
+        const cancelPath = String(body.cancelPath || '/dashboard');
         if (!profileId || !seasonId) {
             return e.json(400, { error: 'Missing profileId or seasonId' });
         }
@@ -17186,12 +17187,13 @@ routerAdd("POST", "/api/checkout/create-dues-session", (e) => {
         }
         const isAdmin = e.auth.get('role') === 'admin';
         let isOwnProfile = false;
-        if (!isAdmin) {
-            try {
-                const targetProfile = $app.findRecordById('profiles', profileId);
-                isOwnProfile = targetProfile.get('user') === e.auth.id;
-            }
-            catch (_a) {
+        let targetProfile = null;
+        try {
+            targetProfile = $app.findRecordById('profiles', profileId);
+            isOwnProfile = targetProfile.get('user') === e.auth.id;
+        }
+        catch (_a) {
+            if (!isAdmin) {
                 return e.json(403, { error: 'Forbidden' });
             }
         }
@@ -17200,8 +17202,11 @@ routerAdd("POST", "/api/checkout/create-dues-session", (e) => {
         }
         const isModuleEnabled = (moduleName) => {
             try {
-                const setting = $app.findFirstRecordByFilter('appSettings', `key = '${moduleName}'`);
-                return setting.get('value').enabled === true;
+                const setting = $app.findFirstRecordByFilter('appSettings', 'key = {:moduleName}', {
+                    moduleName,
+                });
+                const val = setting.get('value');
+                return (val === null || val === void 0 ? void 0 : val.enabled) === true;
             }
             catch (_a) {
                 return false;
@@ -17255,17 +17260,24 @@ routerAdd("POST", "/api/checkout/create-dues-session", (e) => {
             feeCents: String(feeCents),
             amountPaidCents: String(duesAmountCents + feeCents),
         };
+        let userEmail = '';
+        if (targetProfile) {
+            try {
+                const userId = targetProfile.get('user');
+                if (userId) {
+                    const u = $app.findRecordById('users', userId);
+                    userEmail = u.get('email') || '';
+                }
+            }
+            catch (_c) {
+            }
+        }
+        if (!userEmail && e.auth) {
+            userEmail = e.auth.get('email') || '';
+        }
         try {
-            const sessionUrl = createCheckoutSession({
-                payment_method_types: ['card'],
-                line_items: lineItems,
-                mode: 'payment',
-                success_url: successUrl,
-                cancel_url: cancelUrl,
-                metadata: metadata,
-                client_reference_id: profileId,
-            });
-            return e.json(200, { url: sessionUrl });
+            const session = createCheckoutSession(lineItems, metadata, userEmail, successUrl, cancelUrl);
+            return e.json(200, { url: session.url });
         }
         catch (err) {
             console.log('Error creating dues session: ' + err);
@@ -23720,8 +23732,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
                 .toISOString()
                 .replace('T', ' ');
-            const events = app.findRecordsByFilter('events', `date >= '${thirtyDaysAgo}' && isArchived != true`, '-date', 500);
-            const rosters = app.findRecordsByFilter('eventRosters', `profile = '${profile.id}'`, '', 1000);
+            const events = app.findRecordsByFilter('events', 'date >= {:thirtyDaysAgo} && isArchived != true', '-date', 500, 0, { thirtyDaysAgo });
+            const rosters = app.findRecordsByFilter('eventRosters', 'profile = {:profileId}', '', 1000, 0, { profileId: profile.id });
             const rosterMap = {};
             rosters.forEach((r) => {
                 rosterMap[r.get('event')] = r;

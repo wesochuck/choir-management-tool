@@ -5,9 +5,10 @@ import { getChoirNameSetting, getBaseUrl, calculateStripeFee } from './checkoutH
 declare const $app: PocketBaseApp;
 
 export function handleCreateDuesSession(e: PocketBaseRequestEvent) {
-  const profileId = e.requestInfo().body.profileId;
-  const seasonId = e.requestInfo().body.seasonId;
-  const cancelPath = e.requestInfo().body.cancelPath || '/dashboard';
+  const body = e.requestInfo().body as Record<string, unknown>;
+  const profileId = String(body.profileId || '');
+  const seasonId = String(body.seasonId || '');
+  const cancelPath = String(body.cancelPath || '/dashboard');
 
   if (!profileId || !seasonId) {
     return e.json(400, { error: 'Missing profileId or seasonId' });
@@ -19,11 +20,13 @@ export function handleCreateDuesSession(e: PocketBaseRequestEvent) {
 
   const isAdmin = e.auth.get('role') === 'admin';
   let isOwnProfile = false;
-  if (!isAdmin) {
-    try {
-      const targetProfile = $app.findRecordById('profiles', profileId);
-      isOwnProfile = targetProfile.get('user') === e.auth.id;
-    } catch {
+  let targetProfile: PocketBaseRecord | null = null;
+
+  try {
+    targetProfile = $app.findRecordById('profiles', profileId);
+    isOwnProfile = targetProfile.get('user') === e.auth.id;
+  } catch {
+    if (!isAdmin) {
       return e.json(403, { error: 'Forbidden' });
     }
   }
@@ -35,8 +38,11 @@ export function handleCreateDuesSession(e: PocketBaseRequestEvent) {
   // Ensure the module is enabled
   const isModuleEnabled = (moduleName: string) => {
     try {
-      const setting = $app.findFirstRecordByFilter('appSettings', `key = '${moduleName}'`);
-      return setting.get('value').enabled === true;
+      const setting = $app.findFirstRecordByFilter('appSettings', 'key = {:moduleName}', {
+        moduleName,
+      });
+      const val = setting.get('value') as { enabled?: boolean } | null;
+      return val?.enabled === true;
     } catch {
       return false;
     }
@@ -98,18 +104,26 @@ export function handleCreateDuesSession(e: PocketBaseRequestEvent) {
     amountPaidCents: String(duesAmountCents + feeCents),
   };
 
-  try {
-    const sessionUrl = createCheckoutSession({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: metadata,
-      client_reference_id: profileId,
-    });
+  let userEmail = '';
+  if (targetProfile) {
+    try {
+      const userId = targetProfile.get('user') as string;
+      if (userId) {
+        const u = $app.findRecordById('users', userId);
+        userEmail = (u.get('email') as string) || '';
+      }
+    } catch {
+      // ignore
+    }
+  }
+  if (!userEmail && e.auth) {
+    userEmail = (e.auth.get('email') as string) || '';
+  }
 
-    return e.json(200, { url: sessionUrl });
+  try {
+    const session = createCheckoutSession(lineItems, metadata, userEmail, successUrl, cancelUrl);
+
+    return e.json(200, { url: session.url });
   } catch (err: unknown) {
     console.log('Error creating dues session: ' + err);
     return e.json(500, { error: 'Failed to create dues session' });
