@@ -6,6 +6,7 @@ import {
   formatSecondsToDuration,
 } from '../music/duration';
 import { formatInTimezone } from '../timezone';
+import { formatFeaturedNumberCredit } from './performerCredits';
 
 export interface SetListDisplayRow extends SetListItem {
   displayTitle: string;
@@ -109,6 +110,9 @@ export function updateSetListItem(
   if (updated.type === 'intermission') {
     updated.composer = undefined;
     updated.pieceId = undefined;
+    updated.isFeaturedNumber = false;
+    updated.performerCredits = [];
+    updated.soloSmallGroup = false;
   }
 
   return updated;
@@ -286,7 +290,8 @@ export function buildSetListPlainText(
   eventDate: string,
   timezone: string,
   venueName: string,
-  items: SetListDisplayRow[]
+  items: SetListDisplayRow[],
+  includePerformerCredits = true
 ): string {
   const dateStr = formatInTimezone(eventDate, timezone, {
     weekday: 'long',
@@ -312,6 +317,8 @@ export function buildSetListPlainText(
     } else {
       const composerSuffix = item.displayComposer ? ` ~ ${item.displayComposer}` : '';
       text += `${songIndex}. ${item.displayTitle}${composerSuffix}\n`;
+      const featuredCredit = includePerformerCredits ? formatFeaturedNumberCredit(item) : null;
+      if (featuredCredit) text += `   ${featuredCredit}\n`;
       songIndex++;
     }
   });

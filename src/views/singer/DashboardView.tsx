@@ -20,6 +20,7 @@ import { duesService, type SeasonalDue } from '../../services/duesService';
 import { seasonService } from '../../services/seasonService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useSetup } from '../../contexts/SetupContext';
+import { FeaturedAssignmentCallout } from '../../components/singer/FeaturedAssignmentCallout';
 
 export default function DashboardView() {
   const queryClient = useQueryClient();
@@ -302,6 +303,13 @@ export default function DashboardView() {
                   )}
                 </div>
 
+                <FeaturedAssignmentCallout
+                  event={nextEvent}
+                  allEvents={events}
+                  profileId={myProfile?.id}
+                  compact
+                />
+
                 {isNextEventParentPerformanceDeclined ? (
                   <div className="text-muted mt-4 w-full rounded border border-dashed border-white/30 p-2 text-center text-xs">
                     🚫 Excused (Parent Performance Declined)
@@ -378,6 +386,7 @@ export default function DashboardView() {
                   maxRehearsalMisses={maxRehearsalMisses}
                   musicLibraryEnabled={musicLibraryEnabled}
                   seatingEnabled={seatingEnabled}
+                  myProfileId={myProfile?.id}
                 />
               ))}
             </div>
@@ -397,6 +406,7 @@ export default function DashboardView() {
                     maxRehearsalMisses={maxRehearsalMisses}
                     musicLibraryEnabled={musicLibraryEnabled}
                     seatingEnabled={seatingEnabled}
+                    myProfileId={myProfile?.id}
                   />
                 ))}
               </div>

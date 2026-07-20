@@ -9,6 +9,8 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
 import { Button } from '../ui';
+import { formatFeaturedNumberCredit } from '../../lib/setList/performerCredits';
+import { FeaturedAssignmentCallout } from './FeaturedAssignmentCallout';
 
 interface EventCardProps {
   event: Event;
@@ -19,6 +21,7 @@ interface EventCardProps {
   maxRehearsalMisses?: number;
   musicLibraryEnabled?: boolean;
   seatingEnabled?: boolean;
+  myProfileId?: string;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({
@@ -30,6 +33,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   maxRehearsalMisses = 3,
   musicLibraryEnabled = true,
   seatingEnabled = true,
+  myProfileId = '',
 }) => {
   const { timezone } = useChoirSettings();
   const navigate = useNavigate();
@@ -227,6 +231,8 @@ export const EventCard: React.FC<EventCardProps> = ({
             })()}
         </div>
 
+        <FeaturedAssignmentCallout event={event} allEvents={allEvents} profileId={myProfileId} />
+
         {previewData.visible && previewData.setList.length > 0 && (
           <div className="border-border bg-surface my-2 rounded-xl border p-4">
             <h5 className="text-text-muted m-0 mb-1 text-sm">📋 {previewData.label}</h5>
@@ -237,11 +243,17 @@ export const EventCard: React.FC<EventCardProps> = ({
                 const itemTitle = (rawItem.title ||
                   rawItem.pieceTitle ||
                   'Untitled Piece') as string;
+                const featuredCredit = formatFeaturedNumberCredit(item);
                 return (
                   <li key={item.id || `${itemTitle}-${idx}`} className="mb-1">
                     <strong>{itemTitle}</strong>
                     {item.composer && (
                       <span className="text-text-muted text-xs"> — {item.composer}</span>
+                    )}
+                    {featuredCredit && (
+                      <div className="text-primary-deep text-xs font-semibold">
+                        {featuredCredit}
+                      </div>
                     )}
                   </li>
                 );

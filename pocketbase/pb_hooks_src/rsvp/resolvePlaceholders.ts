@@ -142,7 +142,13 @@ routerAdd('POST', '/api/singer/resolve-placeholders', (e) => {
 
   // Resolve {singerName}
   const performerLabel = (() => {
-    try { const r = $app.findFirstRecordByFilter('appSettings', "key = 'performer_label'"); const v = r?.get('value'); return typeof v === 'string' && v.trim() ? v.trim() : 'Performer'; } catch { return 'Performer'; }
+    try {
+      const r = $app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+      const v = r?.get('value');
+      return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+    } catch {
+      return 'Performer';
+    }
   })();
   const recipientName = (profile.get('name') || performerLabel) as string;
   htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
@@ -202,7 +208,9 @@ routerAdd('POST', '/api/singer/resolve-placeholders', (e) => {
       .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
       .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
       .replace(/{eventInfo}/g, () => eventInfoHtml)
-      .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')));
+      .replace(/{setlist}/g, () =>
+        renderSetlistHtml(event.get('setList'), event.get('setListApproved') !== false)
+      );
 
     // Resolve RSVP links
     if (htmlBody.indexOf('{{RSVP_LINKS}}') !== -1 || htmlBody.indexOf('{rsvpLinks}') !== -1) {

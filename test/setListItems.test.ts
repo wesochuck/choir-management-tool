@@ -1,21 +1,26 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { 
+import {
   createSetListItemFromCustomInput,
   createSetListItemFromMusicPiece,
   updateSetListItem,
   resolveSetListDisplayRows,
   calculateSetListDurationTotals,
-  getDefaultPlayableTrackKey
+  getDefaultPlayableTrackKey,
 } from '../src/lib/setList/setListItems';
 import { createMusicPieceFixture } from './helpers';
 
 describe('Set List Utilities (Phase 1)', () => {
   describe('createSetListItemFromCustomInput', () => {
     it('creates unlinked song item from custom input', () => {
-      const input = { title: 'My Custom Song', composer: 'Me', duration: '3:00', type: 'song' as const };
+      const input = {
+        title: 'My Custom Song',
+        composer: 'Me',
+        duration: '3:00',
+        type: 'song' as const,
+      };
       const item = createSetListItemFromCustomInput(input);
-      
+
       assert.strictEqual(item.title, 'My Custom Song');
       assert.strictEqual(item.composer, 'Me');
       assert.strictEqual(item.duration, '3:00');
@@ -27,7 +32,7 @@ describe('Set List Utilities (Phase 1)', () => {
     it('creates unlinked intermission item', () => {
       const input = { title: 'Break', duration: '15:00', type: 'intermission' as const };
       const item = createSetListItemFromCustomInput(input);
-      
+
       assert.strictEqual(item.title, 'Break');
       assert.strictEqual(item.duration, '15:00');
       assert.strictEqual(item.type, 'intermission');
@@ -40,7 +45,9 @@ describe('Set List Utilities (Phase 1)', () => {
     });
 
     it('rejects invalid duration', () => {
-      assert.throws(() => createSetListItemFromCustomInput({ title: 'Song', duration: 'invalid', type: 'song' }));
+      assert.throws(() =>
+        createSetListItemFromCustomInput({ title: 'Song', duration: 'invalid', type: 'song' })
+      );
     });
   });
 
@@ -50,10 +57,10 @@ describe('Set List Utilities (Phase 1)', () => {
         id: 'p1',
         title: 'Hallelujah',
         composer: 'Handel',
-        duration: '3:45'
+        duration: '3:45',
       });
       const item = createSetListItemFromMusicPiece(piece);
-      
+
       assert.strictEqual(item.pieceId, 'p1');
       assert.strictEqual(item.title, 'Hallelujah');
       assert.strictEqual(item.composer, 'Handel');
@@ -66,10 +73,10 @@ describe('Set List Utilities (Phase 1)', () => {
         id: 'p1',
         title: 'Hallelujah',
         composer: 'Handel',
-        duration: '3:45'
+        duration: '3:45',
       });
       const item = createSetListItemFromMusicPiece(piece, { title: 'Hallelujah Chorus' });
-      
+
       assert.strictEqual(item.title, 'Hallelujah Chorus');
       assert.strictEqual(item.pieceId, 'p1');
     });
@@ -86,15 +93,18 @@ describe('Set List Utilities (Phase 1)', () => {
 
   describe('resolveSetListDisplayRows', () => {
     const library = [
-      createMusicPieceFixture({ id: 'p1', title: 'Lib Title', composer: 'Lib Composer', duration: '4:00' })
+      createMusicPieceFixture({
+        id: 'p1',
+        title: 'Lib Title',
+        composer: 'Lib Composer',
+        duration: '4:00',
+      }),
     ];
 
     it('prefers item field over library field for linked pieces', () => {
-      const items = [
-        { id: '1', pieceId: 'p1', title: 'Override Title', type: 'song' as const }
-      ];
+      const items = [{ id: '1', pieceId: 'p1', title: 'Override Title', type: 'song' as const }];
       const rows = resolveSetListDisplayRows(items, library);
-      
+
       assert.strictEqual(rows[0].displayTitle, 'Override Title');
       assert.strictEqual(rows[0].displayComposer, 'Lib Composer');
       assert.strictEqual(rows[0].displayDuration, '4:00');
@@ -102,10 +112,16 @@ describe('Set List Utilities (Phase 1)', () => {
 
     it('handles unlinked custom items', () => {
       const items = [
-        { id: '1', title: 'Custom Title', composer: 'Custom Comp', duration: '2:30', type: 'song' as const }
+        {
+          id: '1',
+          title: 'Custom Title',
+          composer: 'Custom Comp',
+          duration: '2:30',
+          type: 'song' as const,
+        },
       ];
       const rows = resolveSetListDisplayRows(items, library);
-      
+
       assert.strictEqual(rows[0].displayTitle, 'Custom Title');
       assert.strictEqual(rows[0].displayComposer, 'Custom Comp');
       assert.strictEqual(rows[0].displayDuration, '2:30');
@@ -114,10 +130,10 @@ describe('Set List Utilities (Phase 1)', () => {
     it('calculates correct cumulative timestamps', () => {
       const items = [
         { id: '1', duration: '3:00', type: 'song' as const },
-        { id: '2', duration: '2:00', type: 'song' as const }
+        { id: '2', duration: '2:00', type: 'song' as const },
       ];
       const rows = resolveSetListDisplayRows(items, []);
-      
+
       assert.strictEqual(rows[0].cumulativeStart, '0:00');
       assert.strictEqual(rows[0].cumulativeEnd, '3:00');
       assert.strictEqual(rows[1].cumulativeStart, '3:00');
@@ -130,10 +146,10 @@ describe('Set List Utilities (Phase 1)', () => {
       const items = [
         { id: '1', duration: '3:00', type: 'song' as const },
         { id: '2', duration: '15:00', type: 'intermission' as const },
-        { id: '3', duration: '2:30', type: 'song' as const }
+        { id: '3', duration: '2:30', type: 'song' as const },
       ];
       const totals = calculateSetListDurationTotals(items, []);
-      
+
       assert.strictEqual(totals.songs, '5:30');
       assert.strictEqual(totals.intermissions, '15:00');
       assert.strictEqual(totals.total, '20:30');
@@ -145,23 +161,46 @@ describe('Set List Utilities (Phase 1)', () => {
       const { buildSetListPlainText } = await import('../src/lib/setList/setListItems');
       const items = [
         {
-          id: '1', type: 'song' as const, title: 'Song A', composer: 'Comp A',
-          displayTitle: 'Song A', displayComposer: 'Comp A', displayDuration: '',
-          cumulativeStart: '', cumulativeEnd: '',
+          id: '1',
+          type: 'song' as const,
+          title: 'Song A',
+          composer: 'Comp A',
+          displayTitle: 'Song A',
+          displayComposer: 'Comp A',
+          displayDuration: '',
+          cumulativeStart: '',
+          cumulativeEnd: '',
         },
         {
-          id: '2', type: 'intermission' as const, title: 'Break',
-          displayTitle: 'Break', displayComposer: '', displayDuration: '15:00',
-          cumulativeStart: '', cumulativeEnd: '',
+          id: '2',
+          type: 'intermission' as const,
+          title: 'Break',
+          displayTitle: 'Break',
+          displayComposer: '',
+          displayDuration: '15:00',
+          cumulativeStart: '',
+          cumulativeEnd: '',
         },
         {
-          id: '3', type: 'song' as const, title: 'Song B', composer: 'Comp B',
-          displayTitle: 'Song B', displayComposer: 'Comp B', displayDuration: '',
-          cumulativeStart: '', cumulativeEnd: '',
+          id: '3',
+          type: 'song' as const,
+          title: 'Song B',
+          composer: 'Comp B',
+          displayTitle: 'Song B',
+          displayComposer: 'Comp B',
+          displayDuration: '',
+          cumulativeStart: '',
+          cumulativeEnd: '',
         },
       ];
 
-      const text = buildSetListPlainText('Concert', '2026-12-25T19:00:00.000Z', 'America/New_York', 'Main Hall', items);
+      const text = buildSetListPlainText(
+        'Concert',
+        '2026-12-25T19:00:00.000Z',
+        'America/New_York',
+        'Main Hall',
+        items
+      );
 
       assert.match(text, /Set List: Concert/);
       assert.match(text, /December 25.*2026/);
@@ -172,6 +211,45 @@ describe('Set List Utilities (Phase 1)', () => {
       assert.ok(text.indexOf('1.') < text.indexOf('Break'));
       assert.ok(text.indexOf('Break') < text.indexOf('2.'));
     });
+
+    it('includes approved performer credits and withholds draft credits', async () => {
+      const { buildSetListPlainText } = await import('../src/lib/setList/setListItems');
+      const items = [
+        {
+          id: '1',
+          type: 'song' as const,
+          title: 'Solo Song',
+          displayTitle: 'Solo Song',
+          displayComposer: '',
+          displayDuration: '',
+          cumulativeStart: '',
+          cumulativeEnd: '',
+          isFeaturedNumber: true,
+          performerCredits: [
+            { kind: 'profile' as const, profileId: 'p1', displayName: 'Jane Doe' },
+          ],
+        },
+      ];
+      const approved = buildSetListPlainText(
+        'Concert',
+        '2026-12-25T19:00:00.000Z',
+        'America/New_York',
+        '',
+        items,
+        true
+      );
+      const draft = buildSetListPlainText(
+        'Concert',
+        '2026-12-25T19:00:00.000Z',
+        'America/New_York',
+        '',
+        items,
+        false
+      );
+      assert.match(approved, /Solo — Jane Doe/);
+      assert.match(draft, /Solo Song/);
+      assert.doesNotMatch(draft, /Jane Doe/);
+    });
   });
 
   describe('getDefaultPlayableTrackKey', () => {
@@ -179,8 +257,8 @@ describe('Set List Utilities (Phase 1)', () => {
       const piece = createMusicPieceFixture({
         audioTrackMapping: {
           tutti: 'tutti.mp3',
-          soprano: 's.mp3'
-        }
+          soprano: 's.mp3',
+        },
       });
       assert.strictEqual(getDefaultPlayableTrackKey(piece), 'tutti');
     });
@@ -189,8 +267,8 @@ describe('Set List Utilities (Phase 1)', () => {
       const piece = createMusicPieceFixture({
         audioTrackMapping: {
           soprano: 's.mp3',
-          alto: 'a.mp3'
-        }
+          alto: 'a.mp3',
+        },
       });
       assert.strictEqual(getDefaultPlayableTrackKey(piece), 'soprano');
     });

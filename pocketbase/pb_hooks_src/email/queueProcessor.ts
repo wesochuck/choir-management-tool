@@ -501,7 +501,9 @@ export function processEmailQueue(app: PocketBaseApp): void {
             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
             .replace(/{eventInfo}/g, () => eventInfoHtml)
-            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+            .replace(/{setlist}/g, () =>
+              renderSetlistHtml(event.get('setList'), event.get('setListApproved') !== false)
+            )
             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
 

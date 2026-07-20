@@ -2,17 +2,20 @@ import type { Event } from '../../../services/eventService';
 import type { SetListDisplayRow } from '../../../lib/setList/setListItems';
 import { formatInTimezone } from '../../../lib/timezone';
 import { Divider } from '../../../components/ui';
+import { formatFeaturedNumberCredit } from '../../../lib/setList/performerCredits';
 
 interface SetListPrintContentProps {
   selectedEvent: Event | null | undefined;
   itemsWithDetails: SetListDisplayRow[];
   timezone: string;
+  includePerformerCredits?: boolean;
 }
 
 export function SetListPrintContent({
   selectedEvent,
   itemsWithDetails,
   timezone,
+  includePerformerCredits = true,
 }: SetListPrintContentProps) {
   if (!selectedEvent) return null;
 
@@ -52,18 +55,23 @@ export function SetListPrintContent({
                 </div>
               );
             }
+            const featuredCredit = includePerformerCredits
+              ? formatFeaturedNumberCredit(item)
+              : null;
             const el = (
-              <div
-                key={item.id}
-                className="flex items-baseline justify-between gap-4 border-b border-gray-100 py-1 text-lg"
-              >
-                <span className="font-medium text-gray-900">
-                  {songIndex}. {item.displayTitle}
-                </span>
-                {item.displayComposer && (
-                  <span className="text-right text-base text-gray-600 italic">
-                    {item.displayComposer}
+              <div key={item.id} className="border-b border-gray-100 py-1">
+                <div className="flex items-baseline justify-between gap-4 text-lg">
+                  <span className="font-medium text-gray-900">
+                    {songIndex}. {item.displayTitle}
                   </span>
+                  {item.displayComposer && (
+                    <span className="text-right text-base text-gray-600 italic">
+                      {item.displayComposer}
+                    </span>
+                  )}
+                </div>
+                {featuredCredit && (
+                  <div className="pl-5 text-sm font-semibold text-gray-700">{featuredCredit}</div>
                 )}
               </div>
             );

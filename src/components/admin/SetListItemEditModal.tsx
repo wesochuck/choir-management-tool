@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, Button, Input, Textarea } from '../ui';
+import { Modal, Button, Checkbox, Input, Textarea } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { isValidDurationString } from '../../lib/musicPieceUtils';
-import type { SetListItem } from '../../services/eventService';
+import type { SetListItem, SetListPerformerCredit } from '../../services/eventService';
+import {
+  getPerformerCredits,
+  isFeaturedNumber,
+  migrateFeaturedNumberItem,
+} from '../../lib/setList/performerCredits';
+import { SetListPerformerCreditsEditor } from './SetListPerformerCreditsEditor';
 
 interface SetListItemEditModalProps {
   isOpen: boolean;
@@ -23,7 +29,8 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   const [duration, setDuration] = useState('');
   const [notes, setNotes] = useState('');
   const [type, setType] = useState<'song' | 'intermission'>('song');
-  const [soloSmallGroup, setSoloSmallGroup] = useState(false);
+  const [featuredNumber, setFeaturedNumber] = useState(false);
+  const [performerCredits, setPerformerCredits] = useState<SetListPerformerCredit[]>([]);
   const [validationError, setValidationError] = useState(false);
 
   useEffect(() => {
@@ -33,7 +40,8 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       setDuration(item.duration || '');
       setNotes(item.notes || '');
       setType(item.type || 'song');
-      setSoloSmallGroup(!!item.soloSmallGroup);
+      setFeaturedNumber(isFeaturedNumber(item));
+      setPerformerCredits(getPerformerCredits(item).map((credit) => ({ ...credit })));
     }
   }, [item, isOpen]);
 
@@ -44,16 +52,51 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     const durationChanged = duration !== (item.duration || '');
     const notesChanged = notes !== (item.notes || '');
     const typeChanged = type !== (item.type || 'song');
-    const soloChanged = soloSmallGroup !== !!item.soloSmallGroup;
+    const featuredChanged = featuredNumber !== isFeaturedNumber(item);
+    const creditsChanged =
+      JSON.stringify(performerCredits) !== JSON.stringify(getPerformerCredits(item));
     return (
       titleChanged ||
       composerChanged ||
       durationChanged ||
       notesChanged ||
       typeChanged ||
-      soloChanged
+      featuredChanged ||
+      creditsChanged
     );
-  }, [item, title, composer, duration, notes, type, soloSmallGroup]);
+  }, [item, title, composer, duration, notes, type, featuredNumber, performerCredits]);
+
+  const handleTypeChange = async (nextType: 'song' | 'intermission') => {
+    if (nextType === type) return;
+    if (nextType === 'intermission' && performerCredits.length > 0) {
+      const confirmed = await dialog.confirm({
+        title: 'Clear Performer Credits?',
+        message: 'Changing this song to an intermission will remove all performer credits.',
+        confirmLabel: 'Change to Intermission',
+        cancelLabel: 'Keep Song',
+        variant: 'danger',
+      });
+      if (!confirmed) return;
+      setFeaturedNumber(false);
+      setPerformerCredits([]);
+    }
+    setType(nextType);
+  };
+
+  const handleFeaturedChange = async (checked: boolean) => {
+    if (!checked && performerCredits.length > 0) {
+      const confirmed = await dialog.confirm({
+        title: 'Clear Performer Credits?',
+        message: 'Turning off Featured Number will remove all selected performer credits.',
+        confirmLabel: 'Turn Off and Clear',
+        cancelLabel: 'Keep Featured Number',
+        variant: 'danger',
+      });
+      if (!confirmed) return;
+      setPerformerCredits([]);
+    }
+    setFeaturedNumber(checked);
+  };
 
   const handleClose = async () => {
     if (isDirty) {
@@ -94,14 +137,20 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     const normalizedDuration = duration.trim();
     if (!validateDuration(normalizedDuration)) return;
 
+    const updatedItem = migrateFeaturedNumberItem(
+      item,
+      type === 'song' && featuredNumber,
+      performerCredits
+    );
     onSave({
-      ...item,
+      ...updatedItem,
       title: title.trim(),
       composer: type === 'song' ? composer.trim() || undefined : undefined,
       duration: normalizedDuration || undefined,
       notes: notes.trim() || undefined,
       type,
-      soloSmallGroup: type === 'song' ? soloSmallGroup : false,
+      isFeaturedNumber: type === 'song' && featuredNumber,
+      performerCredits: type === 'song' && featuredNumber ? performerCredits : [],
     });
     onClose();
   };
@@ -136,7 +185,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               type="button"
               variant={type === 'song' ? 'primary' : 'outline'}
               size="small"
-              onClick={() => setType('song')}
+              onClick={() => void handleTypeChange('song')}
             >
               🎼 Song
             </Button>
@@ -144,7 +193,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               type="button"
               variant={type === 'intermission' ? 'primary' : 'outline'}
               size="small"
-              onClick={() => setType('intermission')}
+              onClick={() => void handleTypeChange('intermission')}
             >
               ⏸️ Intermission
             </Button>
@@ -175,19 +224,21 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         )}
 
         {type === 'song' && (
-          <div
-            className={`flex cursor-pointer flex-row items-center gap-3 rounded-xl border p-3 px-4 shadow-sm transition-colors ${soloSmallGroup ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface'}`}
-            onClick={() => setSoloSmallGroup(!soloSmallGroup)}
+          <Checkbox
+            checked={featuredNumber}
+            onChange={(event) => void handleFeaturedChange(event.target.checked)}
+            className={`rounded-xl border p-3 px-4 shadow-sm transition-colors ${featuredNumber ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface'}`}
           >
-            <input
-              type="checkbox"
-              checked={soloSmallGroup}
-              onChange={(e) => setSoloSmallGroup(e.target.checked)}
-              onClick={(e) => e.stopPropagation()}
-              className="accent-primary size-[18px] cursor-pointer"
-            />
-            <span className="text-[14px] font-medium">🎤 Mark as Solo / Small Group</span>
-          </div>
+            <span className="text-sm font-medium">🎤 Featured Number</span>
+          </Checkbox>
+        )}
+
+        {type === 'song' && featuredNumber && (
+          <SetListPerformerCreditsEditor
+            credits={performerCredits}
+            onChange={setPerformerCredits}
+            isOpen={isOpen}
+          />
         )}
 
         <div className="flex flex-col gap-1">

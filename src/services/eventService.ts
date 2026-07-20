@@ -6,6 +6,17 @@ import { settingsService } from './settingsService';
 
 const BATCH_CHUNK_SIZE = 50;
 
+export type SetListPerformerCredit =
+  | {
+      kind: 'profile';
+      profileId: string;
+      displayName: string;
+    }
+  | {
+      kind: 'guest';
+      displayName: string;
+    };
+
 export interface SetListItem {
   id: string; // Used for dnd-kit key
   title: string;
@@ -14,6 +25,9 @@ export interface SetListItem {
   notes?: string;
   pieceId?: string; // Links to musicLibrary
   type?: 'song' | 'intermission';
+  isFeaturedNumber?: boolean;
+  performerCredits?: SetListPerformerCredit[];
+  /** @deprecated Read-only compatibility for set-list items saved before performer credits. */
   soloSmallGroup?: boolean;
 }
 

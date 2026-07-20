@@ -12,6 +12,7 @@ interface SetListPrintModalProps {
   onCopy: () => void;
   onPrint: () => void;
   copied: boolean;
+  includePerformerCredits?: boolean;
 }
 
 export function SetListPrintModal({
@@ -23,6 +24,7 @@ export function SetListPrintModal({
   onCopy,
   onPrint,
   copied,
+  includePerformerCredits = true,
 }: SetListPrintModalProps) {
   return (
     <Modal
@@ -57,6 +59,7 @@ export function SetListPrintModal({
           selectedEvent={selectedEvent}
           itemsWithDetails={itemsWithDetails}
           timezone={timezone}
+          includePerformerCredits={includePerformerCredits}
         />
       </div>
     </Modal>

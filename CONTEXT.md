@@ -71,6 +71,23 @@ An audio track (typically MP3) attached to a piece in the Music Library. Used by
 
 A curated sequence of music pieces and intermissions scheduled to be performed or rehearsed at a specific event. It displays song titles, composers, durations, running timestamps, and linked practice audio, and can be approved by administrators to be visible to singers on their dashboard.
 
+## Featured Number
+
+A song on an event's **Set List** that highlights an ordered set of **Performer Credits**. It is presented as a Solo when it has one credit, a Group when it has multiple credits, or Performers TBA when it has none.
+_Avoid_: Solo / Small Group flag
+
+## Performer Credit
+
+The stable public name of a roster performer or guest attached to a **Featured Number**. Credits retain their billing order and captured names so an event's published program remains historically accurate.
+_Avoid_: Cast member, assignee
+
+### Example Dialogue
+
+> **Director:** This piece is a Featured Number for Morgan, with guest artist Riley listed second.  
+> **Developer:** I’ll add two Performer Credits in that billing order, so the Set List presents it as a Group.  
+> **Director:** The soloist for the next performance is not chosen yet.  
+> **Developer:** That Featured Number can remain Performers TBA until its Performer Credit is selected.
+
 ## Multi-Work Piece
 
 A sheet music catalog record representing a compound musical work consisting of multiple distinct sections or movements (e.g. masses, cantatas, or oratorios).

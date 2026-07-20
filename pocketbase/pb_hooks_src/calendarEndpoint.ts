@@ -81,6 +81,28 @@ function safeTrim(str: unknown): string {
   return String(str).replace(/^\s+|\s+$/g, '');
 }
 
+export interface CalendarSetListItem {
+  title: string;
+  composer?: string;
+  type?: string;
+  isFeaturedNumber?: boolean;
+  soloSmallGroup?: boolean;
+  performerCredits?: Array<{ displayName?: string }>;
+}
+
+export function formatCalendarPerformerCredit(item: CalendarSetListItem): string {
+  const featured =
+    item.isFeaturedNumber !== undefined ? item.isFeaturedNumber : item.soloSmallGroup === true;
+  if (!featured || item.type === 'intermission') return '';
+  const credits = Array.isArray(item.performerCredits)
+    ? item.performerCredits
+        .map((credit) => safeTrim(credit && credit.displayName))
+        .filter((name) => name !== '')
+    : [];
+  if (credits.length === 0) return 'Featured Number — Performers TBA';
+  return `${credits.length === 1 ? 'Solo' : 'Group'} — ${credits.join(', ')}`;
+}
+
 function getLocalDatePart(date: Date, timezone: string): string {
   const offsetInfo = getTimezoneOffsetInfo(date, timezone);
   const localDate = new Date(date.getTime() + offsetInfo.offsetMinutes * 60 * 1000);
@@ -474,10 +496,7 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
       const setListApproved = event.get('setListApproved') as boolean;
       if (setListApproved && rsvpStatusMap[event.id] === 'Yes') {
         const rawSetList = event.get('setList');
-        const parsedSetList =
-          parseJsonField<{ title: string; composer?: string; pieceId?: string; type?: string }[]>(
-            rawSetList
-          );
+        const parsedSetList = parseJsonField<CalendarSetListItem[]>(rawSetList);
         if (parsedSetList && parsedSetList.length > 0) {
           descParts.push(`\nSet List:`);
           parsedSetList.forEach((item, index) => {
@@ -487,6 +506,8 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
               ? `${index + 1}. ${songTitle} (${songComposer})`
               : `${index + 1}. ${songTitle}`;
             descParts.push(itemStr);
+            const performerCredit = formatCalendarPerformerCredit(item);
+            if (performerCredit) descParts.push(`   ${performerCredit}`);
           });
         }
       }

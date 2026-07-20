@@ -1,4 +1,5 @@
 import type { Event, SetListItem } from '../services/eventService';
+import { getFeaturedNumberLabel, hasProfileCredit } from './setList/performerCredits';
 import type { EventRoster } from '../services/rosterService';
 
 export interface EventLike {
@@ -98,6 +99,44 @@ export interface SingerSetListPreviewResult {
   setList: SetListItem[];
   label: string;
   playerId: string;
+}
+
+export interface SingerFeaturedAssignment {
+  item: SetListItem;
+  label: string;
+  sourceEvent: Event;
+}
+
+export function getEffectiveApprovedSetList(
+  event: Event,
+  allEvents: Event[] = []
+): { sourceEvent: Event; setList: SetListItem[] } | null {
+  const ownSetList = Array.isArray(event.setList) ? event.setList : [];
+  if (ownSetList.length > 0) {
+    if (event.setListApproved === false) return null;
+    return { sourceEvent: event, setList: ownSetList };
+  }
+
+  if (event.type !== 'Rehearsal' || !event.parentPerformanceId) return null;
+  const parent =
+    allEvents.find((candidate) => candidate.id === event.parentPerformanceId) ||
+    event.expand?.parentPerformanceId;
+  if (!parent || parent.setListApproved === false || !parent.setList?.length) return null;
+  return { sourceEvent: parent, setList: parent.setList };
+}
+
+export function getSingerFeaturedAssignments(
+  event: Event,
+  profileId: string,
+  allEvents: Event[] = []
+): SingerFeaturedAssignment[] {
+  const effective = getEffectiveApprovedSetList(event, allEvents);
+  if (!effective || !profileId) return [];
+  return effective.setList.flatMap((item) => {
+    if (!hasProfileCredit(item, profileId)) return [];
+    const label = getFeaturedNumberLabel(item);
+    return label ? [{ item, label, sourceEvent: effective.sourceEvent }] : [];
+  });
 }
 
 export function getSingerSetListPreview(

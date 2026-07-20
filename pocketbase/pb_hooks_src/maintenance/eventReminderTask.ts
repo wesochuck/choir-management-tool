@@ -260,7 +260,9 @@ export function runEventReminderTask(
             const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
             const v = r?.get('value');
             return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
-          } catch { return 'Performer'; }
+          } catch {
+            return 'Performer';
+          }
         })();
         const recipientName = (profile.get('name') || performerLabel) as string;
 
@@ -311,7 +313,9 @@ export function runEventReminderTask(
           .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
           .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
           .replace(/{eventInfo}/g, () => eventInfoHtml)
-          .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+          .replace(/{setlist}/g, () =>
+            renderSetlistHtml(event.get('setList'), event.get('setListApproved') !== false)
+          )
           .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
           .replace(/{rsvpLinks}/g, () => rsvpHtml)
           .replace(/{{PLAYER_LINK}}/g, () => playerHtml)

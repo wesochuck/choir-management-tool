@@ -13,7 +13,7 @@ interface SetListToolbarProps {
   localApproved: boolean;
   timezone: string;
   onEventChange: (id: string) => void;
-  onCopyFrom: (sourceEventId: string) => Promise<void>;
+  onCopyFrom: (sourceEventId: string) => void;
   onToggleApproved: (checked: boolean) => Promise<void>;
   onGoToParent: () => void;
 }
@@ -65,9 +65,9 @@ export function SetListToolbar({
             </span>
             <Select
               value=""
-              onChange={async (e: React.ChangeEvent<HTMLSelectElement>) => {
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                 if (e.target.value) {
-                  await onCopyFrom(e.target.value);
+                  onCopyFrom(e.target.value);
                 }
               }}
               className="w-full"

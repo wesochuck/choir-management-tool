@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { SetListItem } from '../../services/eventService';
 import type { MusicPiece } from '../../types/musicLibrary';
 import { getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
+import { formatFeaturedNumberCredit } from '../../lib/setList/performerCredits';
 import type { MusicGenreDef } from '../../services/settingsService';
 import { Button } from '../ui';
 
@@ -50,14 +51,15 @@ export const SortableSetListItem: React.FC<Props> = ({
 
   const titleText = displayTitle || item.title;
   const hasAudio = linkedPiece ? !!getDefaultPlayableTrackKey(linkedPiece) : false;
+  const featuredCredit = formatFeaturedNumberCredit(item);
 
   return (
     <div
       ref={setNodeRef}
       className={`border-border flex flex-row items-center gap-3 rounded-md border px-3.5 py-2.5 transition-colors ${
         item.type === 'intermission'
-          ? 'border-primary/40 border-dashed bg-primary-light/15'
-          : 'bg-surface shadow-sm hover:bg-surface-muted/70'
+          ? 'border-primary/40 bg-primary-light/15 border-dashed'
+          : 'bg-surface hover:bg-surface-muted/70 shadow-sm'
       }`}
       // @allow-inline-style - dnd-kit sortable transform and transition
       style={{
@@ -106,7 +108,7 @@ export const SortableSetListItem: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => onEdit(item)}
-                    className="hover:text-primary cursor-pointer border-none bg-transparent p-0 text-left font-semibold text-inherit underline decoration-border decoration-dotted underline-offset-2"
+                    className="hover:text-primary decoration-border cursor-pointer border-none bg-transparent p-0 text-left font-semibold text-inherit underline decoration-dotted underline-offset-2"
                   >
                     {titleText}
                   </button>
@@ -120,9 +122,10 @@ export const SortableSetListItem: React.FC<Props> = ({
                 )}
               </span>
             )}
-            {item.soloSmallGroup && (
+            {featuredCredit && (
               <span className="border-primary-light bg-primary-light text-primary-deep inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold">
-                🎤 Solo / Small Group
+                <span aria-hidden="true">🎤</span>
+                {featuredCredit}
               </span>
             )}
             {cumulativeStart && cumulativeEnd && (

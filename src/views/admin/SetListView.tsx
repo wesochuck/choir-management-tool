@@ -12,6 +12,7 @@ import { SetListToolbar } from './setlists/SetListToolbar';
 import { SetListDurationBar } from './setlists/SetListDurationBar';
 import { SetListPrintContent } from './setlists/SetListPrintContent';
 import { SetListPrintModal } from './setlists/SetListPrintModal';
+import { SetListCopyModal } from './setlists/SetListCopyModal';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { AppCard } from '../../components/common/AppCard';
 import { SetListInlineCreator } from '../../components/admin/SetListInlineCreator';
@@ -51,19 +52,14 @@ export default function SetListView() {
   // Print modal state
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copySourceEventId, setCopySourceEventId] = useState('');
 
   // Import modal (legacy — no longer actively used)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleEdit = (item: SetListItem) => {
-    const displayRow = setList.itemsWithDetails.find((i) => i.id === item.id);
-    const pieceId = item.pieceId || displayRow?.resolvedPiece?.id;
-    if (pieceId) {
-      library.handleOpenPieceEditor(pieceId);
-    } else {
-      setItemEditing(item);
-      setIsItemEditModalOpen(true);
-    }
+    setItemEditing(item);
+    setIsItemEditModalOpen(true);
   };
 
   const handleSaveItem = async (updatedItem: SetListItem) => {
@@ -129,7 +125,7 @@ export default function SetListView() {
             localApproved={setList.localApproved}
             timezone={timezone}
             onEventChange={setList.setSelectedEventId}
-            onCopyFrom={setList.handleCopyFrom}
+            onCopyFrom={setCopySourceEventId}
             onToggleApproved={setList.handleToggleApproved}
             onGoToParent={() => {
               if (setList.parentPerformance) {
@@ -144,10 +140,9 @@ export default function SetListView() {
                 <div className="border-warning-border bg-warning-bg/70 text-warning-text rounded-r-md border-l-4 p-3 text-sm leading-relaxed">
                   <div className="mb-1 font-semibold">⚠️ Rehearsal Mode</div>
                   <p className="m-0">
-                    This rehearsal inherits its set list and ${performerLabel.toLowerCase()}{' '}
-                    visibility from the parent Performance:{' '}
-                    <strong>{setList.parentPerformance?.title || 'Concert'}</strong>. Direct edits
-                    here will not be visible on the {performerLabel} Dashboard.
+                    Approved rehearsal focus pieces are shown first. When this rehearsal has no set
+                    list, the {performerLabel} Dashboard falls back to the parent Performance:{' '}
+                    <strong>{setList.parentPerformance?.title || 'Concert'}</strong>.
                   </p>
                   {setList.parentPerformance && (
                     <Button
@@ -259,6 +254,7 @@ export default function SetListView() {
           selectedEvent={setList.selectedEvent}
           itemsWithDetails={setList.itemsWithDetails}
           timezone={timezone}
+          includePerformerCredits={setList.localApproved}
         />
       </div>
 
@@ -304,6 +300,14 @@ export default function SetListView() {
           onCopy={handleCopy}
           onPrint={handlePrintList}
           copied={copied}
+          includePerformerCredits={setList.localApproved}
+        />
+
+        <SetListCopyModal
+          sourceEvent={events.find((event) => event.id === copySourceEventId) || null}
+          targetEvent={setList.selectedEvent}
+          onClose={() => setCopySourceEventId('')}
+          onCopy={setList.handleCopyFrom}
         />
 
         <PlayerLinkModal

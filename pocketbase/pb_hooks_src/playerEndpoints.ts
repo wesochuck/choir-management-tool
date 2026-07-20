@@ -31,6 +31,18 @@ interface VoicePartsSetting {
   voiceParts?: unknown[];
 }
 
+export function sanitizeSetListForPlayer(rawSetList: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(rawSetList)) return [];
+  return rawSetList.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const sanitized = { ...(item as Record<string, unknown>) };
+    delete sanitized.performerCredits;
+    delete sanitized.isFeaturedNumber;
+    delete sanitized.soloSmallGroup;
+    return [sanitized];
+  });
+}
+
 /**
  * Endpoint: POST /api/generate-player-token
  * Admins only.
@@ -135,7 +147,7 @@ export function handleSingerPlayerPlaylist(e: PocketBaseRequestEvent): void {
         title: event.get('title'),
         date: event.get('date'),
       },
-      setList: setList,
+      setList: sanitizeSetListForPlayer(setList),
       pieces: pieces,
       voiceParts: voiceParts,
     });
@@ -234,7 +246,7 @@ export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
         title: event.get('title'),
         date: event.get('date'),
       },
-      setList: setList,
+      setList: sanitizeSetListForPlayer(setList),
       pieces: pieces,
       voiceParts: voiceParts,
     });

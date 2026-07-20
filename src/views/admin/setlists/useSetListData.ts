@@ -23,6 +23,10 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import {
+  copySetListItems,
+  type SetListCreditCopyMode,
+} from '../../../lib/setList/performerCredits';
 
 export interface UseSetListDataReturn {
   selectedEventId: string;
@@ -44,7 +48,7 @@ export interface UseSetListDataReturn {
   handleDelete: (id: string) => Promise<void>;
   handleDragEnd: (event: DragEndEvent) => Promise<void>;
   handleInlineAddItem: (item: SetListItem) => Promise<void>;
-  handleCopyFrom: (sourceEventId: string) => Promise<void>;
+  handleCopyFrom: (sourceEventId: string, creditMode: SetListCreditCopyMode) => Promise<void>;
   handleToggleApproved: (checked: boolean) => Promise<void>;
   handleAnnouncementGapChange: (seconds: number) => void;
   updateItems: (newItems: SetListItem[]) => Promise<boolean>;
@@ -114,9 +118,10 @@ export function useSetListData(
       selectedEvent.date,
       timezone,
       selectedEvent.expand?.venue?.name || '',
-      itemsWithDetails
+      itemsWithDetails,
+      localApproved
     );
-  }, [selectedEvent, timezone, itemsWithDetails]);
+  }, [selectedEvent, timezone, itemsWithDetails, localApproved]);
 
   const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const selectedEventIdRef = useRef(selectedEventId);
@@ -256,22 +261,10 @@ export function useSetListData(
     if (!success) return;
   };
 
-  const handleCopyFrom = async (sourceEventId: string) => {
+  const handleCopyFrom = async (sourceEventId: string, creditMode: SetListCreditCopyMode) => {
     const sourceEvent = events.find((e) => e.id === sourceEventId);
     if (!sourceEvent || !sourceEvent.setList) return;
-
-    const shouldCopy = await dialog.confirm({
-      title: 'Copy Set List',
-      message: `Replace current list with items from ${sourceEvent.title || sourceEvent.date}?`,
-    });
-
-    if (shouldCopy) {
-      const copied = sourceEvent.setList.map((i: SetListItem) => ({
-        ...i,
-        id: crypto.randomUUID(),
-      }));
-      await updateItems(copied);
-    }
+    await updateItems(copySetListItems(sourceEvent.setList, creditMode));
   };
 
   const sensors = useSensors(
